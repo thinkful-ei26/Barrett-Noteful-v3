@@ -7,32 +7,19 @@ const Note = require('../models/note');
 // find/search
 // mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
 //   .then(() => {
-//     const searchTerm = 'lady gaga';
+//     const searchTerm = 'tempor';
 //     let filter = {};
 
 //     if (searchTerm) {
 //       filter.title = { $regex: searchTerm, $options: 'i' };
+//       filter.content = { $regex: searchTerm, $options: 'i' };
 //     }
 
-//     return Note.find(filter).sort({ updatedAt: 'desc' });
-//   })
-//   .then(results => {
-//     console.log(results);
-//   })
-//   .then(() => {
-//     return mongoose.disconnect()
-//   })
-//   .catch(err => {
-//     console.error(`ERROR: ${err.message}`);
-//     console.error(err);
-//   });
-
-
-// find by id
-// mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
-//   .then(() => {
-//     const id = '5bfdafc08e868c5c117f83ca';
-//     return Note.findById(id);
+//     return Note.find({ $or: [
+//       { title: filter.title }, 
+//       { content: filter.content }
+//     ]})
+//       .sort({ updatedAt: 'desc' });
 //   })
 //   .then(results => {
 //     console.log(results);
@@ -44,6 +31,24 @@ const Note = require('../models/note');
 //     console.error(`ERROR: ${err.message}`);
 //     console.error(err);
 //   });
+
+
+// find by id
+mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+  .then(() => {
+    const id = '000000000000000000000000';
+    return Note.findById(id);
+  })
+  .then(results => {
+    console.log(results);
+  })
+  .then(() => {
+    return mongoose.disconnect();
+  })
+  .catch(err => {
+    console.error(`ERROR: ${err.message}`);
+    console.error(err);
+  });
 
 // create a note
 // mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
