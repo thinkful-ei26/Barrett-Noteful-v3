@@ -34,21 +34,21 @@ const Note = require('../models/note');
 
 
 // find by id
-mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
-  .then(() => {
-    const id = '000000000000000000000000';
-    return Note.findById(id);
-  })
-  .then(results => {
-    console.log(results);
-  })
-  .then(() => {
-    return mongoose.disconnect();
-  })
-  .catch(err => {
-    console.error(`ERROR: ${err.message}`);
-    console.error(err);
-  });
+// mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+//   .then(() => {
+//     const id = '000000000000000000000000';
+//     return Note.findById(id);
+//   })
+//   .then(results => {
+//     console.log(results);
+//   })
+//   .then(() => {
+//     return mongoose.disconnect();
+//   })
+//   .catch(err => {
+//     console.error(`ERROR: ${err.message}`);
+//     console.error(err);
+//   });
 
 // create a note
 // mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
