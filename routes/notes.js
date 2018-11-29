@@ -41,9 +41,6 @@ router.get('/:id', (req, res, next) => {
         next();
       }
     })
-    .then(() => {
-      return mongoose.disconnect();
-    })
     .catch(err => {
       next(err);
     });
@@ -55,6 +52,13 @@ router.post('/', (req, res, next) => {
   console.log('Create a Note');
   const { title, content } = req.body;
   const newNote = {title, content};
+
+  /***** Never trust users - validate input *****/
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
 
   Note.create(newNote)
     .then(result => {
