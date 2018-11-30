@@ -1,6 +1,8 @@
 'use strict';
 const mongoose = require('mongoose');
 
+const {Note} = require('./note');
+
 const tagSchema = new mongoose.Schema({
   name: { 
     type: String, 
@@ -20,4 +22,13 @@ tagSchema.set('toJSON', {
 });
 
 const Tag = mongoose.model('Tag', tagSchema);
+
+// tagSchema.pre('findOneAndRemove', function(next) {
+//   console.log('tagSchema.pre ran');
+// //   Note.updateMany(
+
+// //   );
+//   next();
+// });
+
 module.exports = { Tag };

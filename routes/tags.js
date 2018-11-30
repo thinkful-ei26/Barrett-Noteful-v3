@@ -1,15 +1,15 @@
 'use strict';
-
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-const { Folder } = require('../models/folder');
+const { Tag } = require('../models/tags');
+const { Note } = require('../models/note');
 
-// GET/READ all folders
+// GET/READ all tags
 router.get('/', (req, res, next) => {
   
-  Folder.find()
+  Tag.find()
     .sort('name')
     .then(results => {
       res.json(results);
@@ -18,18 +18,19 @@ router.get('/', (req, res, next) => {
       next(err);
     });
 });
+  
 
-// GET/READ folder by ID
+// GET/READ tag by ID
 router.get('/:id', (req, res, next) => {
   const { id } = req.params;
-
+  
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
-
-  Folder.findById(id)
+  
+  Tag.findById(id)
     .then(result => {
       if (result) {
         res.status(200).json(result);
@@ -42,51 +43,51 @@ router.get('/:id', (req, res, next) => {
     });
 });
 
-// POST/CREATE Folder
+// POST/CREATE tag
 router.post('/', (req, res, next) => {
   const { name } = req.body;
-
-  const newFolder = { name };
-
+  
+  const newTag = { name };
+  
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
-
-  Folder.create(newFolder)
+  
+  Tag.create(newTag)
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The folder name already exists');
+        err = new Error('The tag name already exists');
         err.status = 400;
       }
       next(err);
     });
 });
 
-// PUT/UPDATE folder
+// PUT/UPDATE tag
 router.put('/:id', (req, res, next) => {
   const {id} = req.params;
   const {name} = req.body;
-
+  
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
-
+  
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
-
-  const updateFolder = { name };
-
-  Folder.findByIdAndUpdate(id, updateFolder, {new: true})
+  
+  const updateTag = { name };
+  
+  Tag.findByIdAndUpdate(id, updateTag, {new: true})
     .then(result => {
       if (result) {
         res.json(result);
@@ -96,16 +97,15 @@ router.put('/:id', (req, res, next) => {
     })
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The folder name already exists');
+        err = new Error('The tag name already exists');
         err.status = 400;
       }
       next(err);
     });
 });
 
-// Delete folder, and associated folderId on note
+// Delete tag, and associated tag on note
 router.delete('/:id', (req, res, next) => {
-  
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -114,34 +114,34 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  //   solution
-  //   const folderRemovePromise = Folder.findByIdAndRemove( id );
+  const tagRemovePromise = Tag.findByIdAndRemove( id );
 
-  //   const noteRemovePromise = Note.updateMany(
-  //     { folderId: id },
-  //     { $unset: { folderId: '' } }
-  //   );
+  const noteRemovePromise = Note.updateMany(
 
-  //   Promise.all([folderRemovePromise, noteRemovePromise])
-  //     .then(() => {
-  //       res.status(204).end();
-  //     })
-  //     .catch(err => {
-  //       next(err);
-  //     });
-  // });
+    { },
+    { $pull: { tags: id } }
+  );
 
-  Folder.findOneAndRemove({_id: id})
-    .then(result => {
-      if (result) {
-        res.status(204).end();
-      } else {
-        next();
-      }
+  Promise.all([tagRemovePromise, noteRemovePromise])
+    .then(() => {
+      res.status(204).end();
     })
     .catch(err => {
       next(err);
-    }); 
+    });
+  
+
+  // Tag.findOneAndRemove({_id: id})
+  //   .then(result => {
+  //     if (result) {
+  //       res.status(204).end();
+  //     } else {
+  //       next();
+  //     }
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   }); 
 });
 
 module.exports = router;
