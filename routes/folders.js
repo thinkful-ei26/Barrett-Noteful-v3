@@ -132,7 +132,7 @@ router.delete('/:id', (req, res, next) => {
   //     });
   // });
 
-  Folder.findByIdAndRemove(id)
+  Folder.findOneAndRemove({_id: id})
     .then(result => {
       if (result) {
         res.status(204).end();

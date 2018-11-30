@@ -1,11 +1,13 @@
 'use strict';
+// ---re-seed db--- node utils/seed-database.js
 const mongoose = require('mongoose');
 
 const { MONGODB_URI } = require('../config');
 const {Note} = require('../models/note');
 const {Folder} = require('../models/folder');
+const {Tag} = require('../models/tags');
 
-const { notes, folders } = require('../db/seed/data');
+const { notes, folders, tags } = require('../db/seed/data');
 
 
 mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
@@ -14,7 +16,9 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
     return Promise.all([
       Note.insertMany(notes),
       Folder.insertMany(folders),
-      Folder.createIndexes()
+      Folder.createIndexes(),
+      Tag.insertMany(tags),
+      Tag.createIndexes()
     ]);
   })
   .then(results => {
