@@ -8,7 +8,7 @@ const { Note } = require('../models/note');
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
-  const { searchTerm } = req.query;
+  const { searchTerm, folderId } = req.query;
 
   let filter = {};
 
@@ -16,6 +16,10 @@ router.get('/', (req, res, next) => {
     filter.title = { $regex: searchTerm, $options: 'i' };
     const re = new RegExp(searchTerm, 'i');
     filter.$or = [{ 'title': re }, { 'content': re }];  
+  }
+
+  if (folderId) {
+    filter.folderId = folderId;
   }
 
   Note.find(filter)
@@ -30,7 +34,7 @@ router.get('/', (req, res, next) => {
 
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
-  console.log('Get a Note');
+  
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -40,6 +44,7 @@ router.get('/:id', (req, res, next) => {
   }
 
   Note.findById(id)
+    .populate('folderId')
     .then(result => {
       if (result) {
         res.json(result);
@@ -56,8 +61,9 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   console.log('Create a Note');
-  const { title, content } = req.body;
-  const newNote = {title, content};
+  const { title, content, folderId } = req.body;
+
+  const newNote = {title, content, folderId};
 
   /***** Never trust users - validate input *****/
   if (!title) {
@@ -83,10 +89,10 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   console.log('Update a Note');
   const {id} = req.params;
-  const {title, content} = req.body;
+  const {title, content, folderId} = req.body;
 
-  if (!name) {
-    const err = new Error('Missing `name` in request body');
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
     err.status = 400;
     return next(err);
   }
@@ -97,7 +103,15 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findByIdAndUpdate(id, {title, content})
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  const updateNote = { title, content, folderId };
+
+  Note.findByIdAndUpdate(id, updateNote, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
@@ -117,8 +131,14 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
 
-  console.log('Delete a Note');
   const {id} = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
   Note.findByIdAndRemove(id)
     .then(result => {
       if (result) {

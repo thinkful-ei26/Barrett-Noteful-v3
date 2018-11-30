@@ -4,11 +4,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-const { noteSchema } = require('../models/note');
+const Note = require('../models/note');
+
 const { Folder } = require('../models/folder');
 
 // GET/READ all folders
 router.get('/', (req, res, next) => {
+  
   Folder.find()
     .sort('name')
     .then(results => {
@@ -45,7 +47,7 @@ router.get('/:id', (req, res, next) => {
 // POST/CREATE Folder
 router.post('/', (req, res, next) => {
   const { name } = req.body;
-  console.log({name});
+
   const newFolder = { name };
 
   if (!name) {
@@ -84,7 +86,9 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder.findByIdAndUpdate(id, {name})
+  const updateFolder = { name };
+
+  Folder.findByIdAndUpdate(id, updateFolder, {new: true})
     .then(result => {
       if (result) {
         res.json(result);
@@ -102,12 +106,31 @@ router.put('/:id', (req, res, next) => {
 });
 
 router.delete('/:id', (req, res, next) => {
+  
   const { id } = req.params;
 
-  noteSchema.pre('findByIdAndRemove', function(next) {
-    this.remove(noteSchema.folderId);
-    next();
-  });
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const err = new Error('The `id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  //   solution
+  //   const folderRemovePromise = Folder.findByIdAndRemove( id );
+
+  //   const noteRemovePromise = Note.updateMany(
+  //     { folderId: id },
+  //     { $unset: { folderId: '' } }
+  //   );
+
+  //   Promise.all([folderRemovePromise, noteRemovePromise])
+  //     .then(() => {
+  //       res.status(204).end();
+  //     })
+  //     .catch(err => {
+  //       next(err);
+  //     });
+  // });
 
   Folder.findByIdAndRemove(id)
     .then(result => {

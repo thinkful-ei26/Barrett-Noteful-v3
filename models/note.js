@@ -16,5 +16,12 @@ noteSchema.set('toJSON', {
 });
 
 noteSchema.set('timestamps', true);
+
+noteSchema.pre('findByIdAndRemove', function(next) {
+  this.remove(noteSchema.folderId);
+  next();
+});
+
 const Note = mongoose.model('Note', noteSchema);
-module.exports = { Note, noteSchema };
+
+module.exports = { Note };
