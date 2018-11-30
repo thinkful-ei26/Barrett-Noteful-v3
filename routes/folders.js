@@ -4,22 +4,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-const { Note } = require('../models/note');
+const { noteSchema } = require('../models/note');
+const { Folder } = require('../models/folder');
 
-/* ========== GET/READ ALL ITEMS ========== */
+// GET/READ all folders
 router.get('/', (req, res, next) => {
-  const { searchTerm } = req.query;
-
-  let filter = {};
-
-  if (searchTerm) {
-    filter.title = { $regex: searchTerm, $options: 'i' };
-    const re = new RegExp(searchTerm, 'i');
-    filter.$or = [{ 'title': re }, { 'content': re }];  
-  }
-
-  Note.find(filter)
-    .sort({ updatedAt: 'desc' })
+  Folder.find()
+    .sort('name')
     .then(results => {
       res.json(results);
     })
@@ -28,9 +19,8 @@ router.get('/', (req, res, next) => {
     });
 });
 
-/* ========== GET/READ A SINGLE ITEM ========== */
+// GET/READ folder by ID
 router.get('/:id', (req, res, next) => {
-  console.log('Get a Note');
   const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -39,10 +29,10 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findById(id)
+  Folder.findById(id)
     .then(result => {
       if (result) {
-        res.json(result);
+        res.status(200).json(result);
       } else {
         next();
       }
@@ -50,23 +40,21 @@ router.get('/:id', (req, res, next) => {
     .catch(err => {
       next(err);
     });
-
 });
 
-/* ========== POST/CREATE AN ITEM ========== */
+// POST/CREATE Folder
 router.post('/', (req, res, next) => {
-  console.log('Create a Note');
-  const { title, content } = req.body;
-  const newNote = {title, content};
+  const { name } = req.body;
+  console.log({name});
+  const newFolder = { name };
 
-  /***** Never trust users - validate input *****/
-  if (!title) {
-    const err = new Error('Missing `title` in request body');
+  if (!name) {
+    const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
 
-  Note.create(newNote)
+  Folder.create(newFolder)
     .then(result => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
@@ -79,11 +67,10 @@ router.post('/', (req, res, next) => {
     });
 });
 
-/* ========== PUT/UPDATE A SINGLE ITEM ========== */
+// PUT/UPDATE folder
 router.put('/:id', (req, res, next) => {
-  console.log('Update a Note');
   const {id} = req.params;
-  const {title, content} = req.body;
+  const {name} = req.body;
 
   if (!name) {
     const err = new Error('Missing `name` in request body');
@@ -97,7 +84,7 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Note.findByIdAndUpdate(id, {title, content})
+  Folder.findByIdAndUpdate(id, {name})
     .then(result => {
       if (result) {
         res.json(result);
@@ -114,12 +101,15 @@ router.put('/:id', (req, res, next) => {
     });
 });
 
-/* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
+  const { id } = req.params;
 
-  console.log('Delete a Note');
-  const {id} = req.params;
-  Note.findByIdAndRemove(id)
+  noteSchema.pre('findByIdAndRemove', function(next) {
+    this.remove(noteSchema.folderId);
+    next();
+  });
+
+  Folder.findByIdAndRemove(id)
     .then(result => {
       if (result) {
         res.status(204).end();

@@ -16,4 +16,5 @@ folderSchema.set('toJSON', {
 
 folderSchema.set('timestamps', true);
 
-module.exports = mongoose.model('Folder', folderSchema);
+const Folder = mongoose.model('Folder', folderSchema);
+module.exports = { Folder };

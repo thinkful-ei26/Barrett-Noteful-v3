@@ -16,5 +16,5 @@ noteSchema.set('toJSON', {
 });
 
 noteSchema.set('timestamps', true);
-
-module.exports = mongoose.model('Note', noteSchema);
+const Note = mongoose.model('Note', noteSchema);
+module.exports = { Note, noteSchema };
