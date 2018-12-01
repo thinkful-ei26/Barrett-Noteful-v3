@@ -1,37 +1,49 @@
 'use strict';
+// MIDDLEWARE PATTERN
 
-const express = require('express');
-const morgan = require('morgan');
+// Libraies
+const express = require('express'); // middleware
+const morgan = require('morgan'); // logger
+const mongoose = require('mongoose');
 
-const { PORT } = require('./config');
+const { PORT, MONGODB_URI } = require('./config');  // config
 
+// Router strategies
 const notesRouter = require('./routes/notes');
+const foldersRouter = require('./routes/folders');
+const tagsRouter = require('./routes/tags');
+
+
 
 // Create an Express application
 const app = express();
 
-// Log all requests. Skip logging during
+// Log all requests. Skip logging during tests
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'common', {
   skip: () => process.env.NODE_ENV === 'test'
 }));
 
-// Create a static webserver
+// Create a static webserver. Serve static web files from public folder
 app.use(express.static('public'));
 
-// Parse request body
-app.use(express.json());
+// Authentication here?
+
+// Parse request body Optimization
+app.use(express.json()); // what's this really doing?
 
 // Mount routers
 app.use('/api/notes', notesRouter);
+app.use('/api/folders', foldersRouter);
+app.use('/api/tags', tagsRouter);
 
-// Custom 404 Not Found route handler
+// Custom 404 Not Found route handler for routes that are not found
 app.use((req, res, next) => {
   const err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
-// Custom Error Handler
+// Custom Error Handler for all return next(err)
 app.use((err, req, res, next) => {
   if (err.status) {
     const errBody = Object.assign({}, err, { message: err.message });
@@ -40,15 +52,27 @@ app.use((err, req, res, next) => {
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
   }
-});
+});    
 
-// Listen for incoming connections
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, function () {
-    console.info(`Server listening on ${this.address().port}`);
-  }).on('error', err => {
-    console.error(err);
-  });
+// Only when server starts up
+if (require.main === module) {
+  // Connect to DB and Listen for incoming connections
+  mongoose.connect(MONGODB_URI, { useNewUrlParser:true })
+    .catch(err => {
+      console.error(`ERROR: ${err.message}`);
+      console.error('\n === Did you remember to start `mongod`? === \n');
+      console.error(err);
+    });
+
+  // Listen for incoming connections
+  if (process.env.NODE_ENV !== 'test') { // environment variable
+    app.listen(PORT, function () {
+      console.info(`Server listening on ${this.address().port}`);
+    }).on('error', err => {
+      console.error(err);
+    });
+  }
 }
+
 
 module.exports = app; // Export for testing
