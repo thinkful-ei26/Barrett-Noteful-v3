@@ -6,22 +6,27 @@ const router = express.Router();
 
 const { Note } = require('../models/note');
 
+// endpoints RESTFUL Router
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
   const { searchTerm, folderId, tagId } = req.query;
 
   let filter = {};
 
+  // buisiness logic 
+  // Search by Title or Content
   if (searchTerm) {
     filter.title = { $regex: searchTerm, $options: 'i' };
     const re = new RegExp(searchTerm, 'i');
     filter.$or = [{ 'title': re }, { 'content': re }];  
   }
 
+  // Search by Folder
   if (folderId) {
     filter.folderId = folderId;
   }
 
+  // Search by Tag
   if (tagId) {
     filter.tags = tagId;
   }
@@ -64,10 +69,10 @@ router.get('/:id', (req, res, next) => {
 
 });
 
-/* ========== POST/CREATE AN ITEM ========== */
+/* ========== POST/CREATE/WRITE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   console.log('Create a Note');
-  const { title, content, folderId, tags } = req.body;
+  const { title, content, folderId, tags = []} = req.body;
 
   const newNote = {title, content, folderId, tags};
 
@@ -78,7 +83,13 @@ router.post('/', (req, res, next) => {
     return next(err);
   }
 
-  tags.forEach(tag => {
+  if (folderId && !mongoose.Types.ObjectId.isValid(folderId)) {
+    const err = new Error('The `folderId` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  tags.forEach((tag) => {
     if (tag && !mongoose.Types.ObjectId.isValid(tag)) {
       const err = new Error('The `id` is not valid');
       err.status = 400;
@@ -92,10 +103,6 @@ router.post('/', (req, res, next) => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
     .catch(err => {
-      if (err.code === 11000) {
-        err = new Error('The folder name already exists');
-        err.status = 400;
-      }
       next(err);
     });
 });
@@ -104,7 +111,7 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   console.log('Update a Note');
   const {id} = req.params;
-  const {title, content, folderId, tags} = req.body;
+  const {title, content, folderId, tags = []} = req.body;
 
   if (!title) {
     const err = new Error('Missing `title` in request body');
@@ -124,16 +131,17 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
-  tags.forEach(tag => {
-    if (tag && !mongoose.Types.ObjectId.isValid(tag)) {
-      const err = new Error('The `id` is not valid');
+  if (tags) {
+    const badIds = tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+    if (badIds.length) {
+      const err = new Error('The `tags` array contains an invalid `id`');
       err.status = 400;
       return next(err);
     }
-  } 
-  );
+  }
+  
 
-  const updateNote = { title, content, folderId, tags };
+  const updateNote = { title, content, folderId };
 
   Note.findByIdAndUpdate(id, updateNote, { new: true })
     .then(result => {
@@ -144,10 +152,6 @@ router.put('/:id', (req, res, next) => {
       }
     })
     .catch(err => {
-      if (err.code === 11000) {
-        err = new Error('The folder name already exists');
-        err.status = 400;
-      }
       next(err);
     });
 });

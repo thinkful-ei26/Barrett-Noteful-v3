@@ -116,13 +116,13 @@ router.delete('/:id', (req, res, next) => {
 
   const tagRemovePromise = Tag.findByIdAndRemove( id );
 
-  const noteRemovePromise = Note.updateMany(
+  const noteUpdatePromise = Note.updateMany(
 
     { },
     { $pull: { tags: id } }
   );
 
-  Promise.all([tagRemovePromise, noteRemovePromise])
+  Promise.all([tagRemovePromise, noteUpdatePromise])
     .then(() => {
       res.status(204).end();
     })
@@ -142,6 +142,7 @@ router.delete('/:id', (req, res, next) => {
   //   .catch(err => {
   //     next(err);
   //   }); 
+  // then use pre or post middleware?
 });
 
 module.exports = router;
